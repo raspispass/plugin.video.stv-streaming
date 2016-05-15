@@ -5,3 +5,6 @@ There is an offical Kodi addon that can be downloaded from the [official homepag
 Version 1.0.2:
 * Added "Genre" (Movies, Series, Sports, ...)
 * Added multi page support (Next page feature)
+
+Version 1.0.3:
+* Added search function
