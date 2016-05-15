@@ -110,6 +110,42 @@ def stvGetGroupsByKey(stvToken, groupKey, filterDate, filterTvStation, filterGen
 
 telecastFields = 'telecastid,telecast.title,telecast.subtitle,telecast.tvcategory.name,telecast.startdate,telecast.enddate,telecast.tvstation.name,telecast.subject,telecast.episode,telecast.description,telecast.imageurl100,telecast.imageurl500,adfreeavailable,formats.recordformat.id,formats.recordformat.name'
 
+
+def stvGetTelecastsBySearchFilter(stvToken, filterTitle, filterDate, filterTvStation, filterGenre, startIndex):
+        baseUrl = 'https://api.save.tv:443/v3/records'
+        query = {
+                'q': filterTitle,
+                'fields': telecastFields,
+		'sort': '+title',
+                'limit': 20,
+                'nopagingheader': True,
+                'offset': startIndex,
+                'recordstates': 3
+                }
+        if filterTvStation != 0:
+                query['tvstations'] = filterTvStation
+        if filterDate != '':
+                query['minstartdate'] = filterDate
+                query['maxstartdate'] = filterDate + datetime.timedelta(days=1)
+        if filterGenre != '':
+                query['tvcategories'] = filterGenre
+        url = baseUrl + '?' + urllib.urlencode(query)
+
+        req = urllib2.Request(url, headers={"Authorization": "Bearer " + stvToken})
+        resp = urllib2.urlopen(req)
+        response = json.loads(resp.read())
+
+        paging = response['paging']
+        if paging['offset'] + paging['limit'] < paging['totalCount']:
+                moreTitles = True
+        else:
+                moreTitles = False
+
+        nextOffset = paging['offset'] + paging['limit']
+
+        return(response['items'], moreTitles, nextOffset, paging['totalCount'])
+
+
 def stvGetTelecastsByFilter(stvToken, filterTitle, filterDate, filterTvStation, filterGenre, startIndex):
 	baseUrl = 'https://api.save.tv:443/v3/records'
 	query = { 

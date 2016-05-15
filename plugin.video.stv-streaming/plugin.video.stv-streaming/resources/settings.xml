@@ -1,8 +1,0 @@
-<settings>
-    <setting id="stvUsername" label="30000" type="text" default="" />
-    <setting id="stvPassword" label="30001" type="text" default="" />
-	<setting type="sep"/>
-	<setting id="stvQuality" label="30002" type="select" values="Xvid SD|H.264 Mobile|H.264 SD|H.264 HD" default="H.264 SD"/>
-	<setting id="stvAdfree" label="30003" type="bool" default="true"/>
-</settings>
-

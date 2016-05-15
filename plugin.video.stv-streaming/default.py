@@ -75,6 +75,14 @@ def build_tvGenreGroup(item):
         url = build_url({'stvToken': stvToken, 'mode': 'group', 'groupName': item['id'], 'groupBy': 'genre'})
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 
+# Build level 2 navigation (Suchen in einem Genre)
+def build_tvGenreGroupSearch(item):
+        name = item['name']
+        li = xbmcgui.ListItem(label=name, iconImage='DefaultTVShows.png')
+        url = build_url({'stvToken': stvToken, 'mode': 'search_in_genre', 'groupName': item['id'], 'groupBy': 'genre'})
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+
+
 # Build level 3 navigation (Film-Liste)
 def build_telecast(item):
 	telecast = item['telecast']
@@ -125,7 +133,51 @@ if mode is None:
 		build_category('date', 'Nach Datum')
 		build_category('tvstation', 'Nach Sender')
 		build_category('genre', 'Nach Genre')
+		build_category('search', 'Suchen in Genres')
+
 		xbmcplugin.endOfDirectory(addon_handle)
+
+
+# Search function (in genres)
+elif mode[0] == 'search_in_genre':
+	stvToken = args['stvToken'][0]
+	# Only ask for new search term on initial request (not for second page)
+	if args.get('search_term', None) is None:
+		search_term = xbmcgui.Dialog().input("Suche","",xbmcgui.INPUT_ALPHANUM)
+	else:
+		search_term = args['search_term'][0]
+
+        # In case of initial start there is no page offset set
+        if args.get('hasMorePagesOffset', None) is None:
+                hasMorePagesOffset = 0
+        else:
+                hasMorePagesOffset = args['hasMorePagesOffset'][0]
+	groupBy = args['groupBy'][0]	# 'genre'
+        filterTitle = search_term 	# search term
+        filterTvStation = 0		# Nope
+        filterGenre = args['groupName'][0]	# selected Genre (e.g. Movies)
+
+        telecasts, hasMore, nextOffset, totalCount = savetv.stvGetTelecastsBySearchFilter(stvToken, filterTitle, "", filterTvStation, filterGenre, hasMorePagesOffset)
+	
+        xbmcplugin.setContent(addon_handle, 'movies')
+        for telecast in telecasts:
+                build_telecast(telecast)
+
+        # Add hasMore Listitem
+        if hasMore:
+                nextPage = str(int((nextOffset) / 20))
+                totalPages = int(totalCount / 20)
+		if ((totalCount % 20) > 0):
+			totalPages += 1
+		totalPages = str(totalPages)
+
+                li = xbmcgui.ListItem(label= "Nächste Seite (" + nextPage + " / " + totalPages + ")", iconImage='DefaultTVShows.png')
+                url = build_url({'stvToken': stvToken, 'mode': 'search_in_genre', 'groupName': filterGenre, 'groupBy': groupBy, 'hasMorePagesOffset': nextOffset, 'search_term': search_term})
+                xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+
+        xbmc.executebuiltin("Container.SetViewMode(504)")
+        xbmcplugin.endOfDirectory(addon_handle)
+
 
 # Level 1 navigation (Nach Titel, Nach Datum, Nach Sender, Nach Genre)
 elif mode[0] == 'category':
@@ -165,10 +217,17 @@ elif mode[0] == 'category':
 		tvStations = savetv.stvGetTvStations(stvToken)
 		for tvStation in tvStations:
 			build_tvStationGroup(tvStation)	
+	
 	elif category == 'genre':
 		genres = savetv.stvGetGenres(stvToken)
                 for genre in genres:
                         build_tvGenreGroup(genre)
+	
+	# Seach (only with genres at the moment)
+	elif category == 'search':
+                genres = savetv.stvGetGenres(stvToken)
+                for genre in genres:
+                        build_tvGenreGroupSearch(genre)
 
 
 	xbmcplugin.endOfDirectory(addon_handle)
